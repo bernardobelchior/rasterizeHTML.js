@@ -210,16 +210,6 @@ var browser = (function (util, proxies, sanedomparsererror, theWindow) {
         return documentClone.querySelector(tagName);
     };
 
-    var elementToFullHtmlDocument = function (element) {
-        var tagName = element.tagName.toLowerCase();
-        if (tagName === "html" || tagName === "body") {
-            return element.outerHTML;
-        }
-
-        // Simple hack: hide the body from sizing, otherwise browser would apply a 8px margin
-        return '<body style="margin: 0;">' + element.outerHTML + "</body>";
-    };
-
     module.calculateDocumentContentSize = function (element, options) {
         return new Promise(function (resolve, reject) {
             var zoom = options.zoom || 1,
@@ -236,33 +226,53 @@ var browser = (function (util, proxies, sanedomparsererror, theWindow) {
                 .appendChild(iframe);
 
             iframe.onload = function () {
-                var doc = iframe.contentDocument,
-                    size;
+                console.log('real iframe onload fired')
+            }
 
-                try {
-                    size = calculateContentSize(
-                        findCorrelatingElement(element, doc),
-                        options.clip,
-                        options.width,
-                        options.height,
-                        zoom
-                    );
+            var importedNode = iframe.contentDocument.importNode(element, true);
 
-                    resolve(size);
-                } catch (e) {
-                    reject(e);
-                } finally {
-                    theWindow.document
-                        .getElementsByTagName("body")[0]
-                        .removeChild(iframe);
+            importedNode.querySelectorAll('script, style').forEach(function (el) {
+                if (!el.hasAttribute('nonce')) {
+                    el.setAttribute('nonce', options.nonce);
                 }
-            };
+            })
 
-            // srcdoc doesn't work in PhantomJS yet
-            iframe.contentDocument.open();
-            iframe.contentDocument.write("<!DOCTYPE html>");
-            iframe.contentDocument.write(elementToFullHtmlDocument(element));
-            iframe.contentDocument.close();
+            if (importedNode.tagName === 'HTML') {
+                iframe.contentDocument.lastElementChild.replaceWith(importedNode)
+            } else if (importedNode.tagName === 'BODY') {
+                iframe.contentDocument.body.replaceWith(importedNode)
+            } else {
+                const body = iframe.contentDocument.createElement('body');
+
+                // Simple hack: hide the body from sizing, otherwise browser would apply a 8px margin
+                body.style.margin = '0';
+                body.appendChild(importedNode);
+                iframe.contentDocument.body.replaceWith(body)
+            }
+            console.log('added imported node to iframe')
+
+
+            console.log('on load fired')
+            var doc = iframe.contentDocument,
+                size;
+
+            try {
+                size = calculateContentSize(
+                    findCorrelatingElement(element, doc),
+                    options.clip,
+                    options.width,
+                    options.height,
+                    zoom
+                );
+
+                resolve(size);
+            } catch (e) {
+                reject(e);
+            } finally {
+                theWindow.document
+                    .getElementsByTagName("body")[0]
+                    .removeChild(iframe);
+            }
         });
     };
 
