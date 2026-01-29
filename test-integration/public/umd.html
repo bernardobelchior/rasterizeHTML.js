@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>UMD Test - rasterizeHTML.js</title>
+        <style>
+            body {
+                font-family: monospace;
+                padding: 20px;
+            }
+            .result {
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 4px;
+            }
+            .pass {
+                background: #d4edda;
+                color: #155724;
+            }
+            .fail {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            nav {
+                margin-bottom: 20px;
+                padding: 10px;
+                background: #f0f0f0;
+            }
+            nav a {
+                margin-right: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <strong>Tests:</strong>
+            <a href="esm.html">ESM</a>
+            <a href="cjs.html">CJS</a>
+            <a href="umd.html">UMD</a>
+        </nav>
+        <h1>UMD Test (browser globals)</h1>
+        <p>Testing: <code>window.rasterizeHTML</code> via script tag</p>
+        <div id="results"></div>
+        <canvas id="test-canvas" width="300" height="200"></canvas>
+
+        <!-- Load dependencies as globals -->
+        <script src="/parent/node_modules/url/url.js"></script>
+        <script src="/parent/node_modules/xmlserializer/xmlserializer.js"></script>
+        <script src="/parent/build/dependencies/sane-domparser-error.js"></script>
+        <script src="/parent/build/dependencies/inlineresources.js"></script>
+
+        <!-- Load UMD build -->
+        <script src="/parent/dist/rasterizeHTML.js"></script>
+    </body>
+</html>
