@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>ESM Import Map Test - rasterizeHTML.js</title>
+        <style>
+            body {
+                font-family: monospace;
+                padding: 20px;
+            }
+            .result {
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 4px;
+            }
+            .pass {
+                background: #d4edda;
+                color: #155724;
+            }
+            .fail {
+                background: #f8d7da;
+                color: #721c24;
+            }
+            nav {
+                margin-bottom: 20px;
+                padding: 10px;
+                background: #f0f0f0;
+            }
+            nav a {
+                margin-right: 10px;
+            }
+        </style>
+        <script type="importmap">
+            {
+                "imports": {
+                    "rasterizehtml": "../dist/rasterizeHTML.mjs",
+                    "url": "https://unpkg.com/url@0.11.4",
+                    "xmlserializer": "https://unpkg.com/xmlserializer@0.6.1",
+                    "sane-domparser-error": "https://unpkg.com/sane-domparser-error@0.2.0",
+                    "inlineresources": "https://unpkg.com/inlineresources@1.2.0"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <nav>
+            <strong>Tests:</strong>
+            <a href="public/esm.html">ESM (bundled)</a>
+            <a href="public/cjs.html">CJS</a>
+            <a href="public/umd.html">UMD</a>
+        </nav>
+        <h1>ESM Import Map Test</h1>
+        <p>
+            Testing:
+            <code>import rasterizeHTML from 'rasterizehtml'</code> via import map
+        </p>
+        <div id="results"></div>
+        <canvas id="test-canvas" width="300" height="200"></canvas>
+
+        <script type="module">
+            // Shared utilities for all tests
+            class TestRunner {
+                constructor(testName) {
+                    this.testName = testName;
+                    this.results = [];
+                    this.resultsEl = document.getElementById("results");
+                    this.canvas = document.getElementById("test-canvas");
+                }
+
+                addResult(name, passed, message) {
+                    const div = document.createElement("div");
+                    div.className = `result ${passed ? "pass" : "fail"}`;
+                    div.textContent = `${passed ? "✓" : "✗"} ${name}: ${message}`;
+                    this.resultsEl.appendChild(div);
+                    this.results.push({ name, passed, message });
+                }
+
+                async testAPI(lib) {
+                    // Test 1: Library loaded
+                    this.addResult(
+                        "Library load",
+                        typeof lib !== "undefined",
+                        typeof lib !== "undefined"
+                            ? `${this.testName} library loaded`
+                            : "Failed to load",
+                    );
+
+                    // Test 2: Has expected API
+                    const hasDrawHTML = typeof lib.drawHTML === "function";
+                    const hasDrawURL = typeof lib.drawURL === "function";
+                    const hasDrawDocument = typeof lib.drawDocument === "function";
+
+                    this.addResult(
+                        "API - drawHTML",
+                        hasDrawHTML,
+                        hasDrawHTML ? "Method exists" : "Method missing",
+                    );
+                    this.addResult(
+                        "API - drawURL",
+                        hasDrawURL,
+                        hasDrawURL ? "Method exists" : "Method missing",
+                    );
+                    this.addResult(
+                        "API - drawDocument",
+                        hasDrawDocument,
+                        hasDrawDocument ? "Method exists" : "Method missing",
+                    );
+
+                    // Test 3: Basic rendering
+                    if (this.canvas) {
+                        try {
+                            const html = `<div style="color: ${this.getTestColor()}; font-weight: bold;">${this.testName} works!</div>`;
+                            const result = await lib.drawHTML(html, this.canvas);
+                            this.addResult(
+                                "Render",
+                                true,
+                                "Successfully rendered HTML to canvas",
+                            );
+                            console.log("Render result:", result);
+                        } catch (error) {
+                            this.addResult("Render", false, `Error: ${error.message}`);
+                            console.error("Render error:", error);
+                        }
+                    }
+
+                    // Summary
+                    const passed = this.results.filter((r) => r.passed).length;
+                    const total = this.results.length;
+                    console.log(`\n${this.testName} Tests: ${passed}/${total} passed`);
+                }
+
+                getTestColor() {
+                    const colors = { ESM: "red", CJS: "blue", UMD: "green" };
+                    return colors[this.testName] || "black";
+                }
+            }
+
+            // Run the test
+            import rasterizeHTML from "rasterizehtml";
+
+            const runner = new TestRunner("ESM");
+            runner.testAPI(rasterizeHTML);
+        </script>
+    </body>
+</html>
